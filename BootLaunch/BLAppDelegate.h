@@ -21,6 +21,8 @@
 - (void)saveContext;
 - (NSURL *)applicationDocumentsDirectory;
 
+- (void)updateAppLaunchTime;
+
 @property (strong, nonatomic) BLMainViewController *mainViewController;
 
 @end

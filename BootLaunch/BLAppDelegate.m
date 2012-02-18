@@ -29,6 +29,9 @@
     }
     self.window.rootViewController = self.mainViewController;
     self.mainViewController.managedObjectContext = self.managedObjectContext;
+    
+    [self updateAppLaunchTime];
+    
     [self.window makeKeyAndVisible];
     return YES;
 }
@@ -85,6 +88,18 @@
             NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
             abort();
         } 
+    }
+}
+
+#pragma mark - Custom methods
+
+- (void)updateAppLaunchTime {
+    id newAppLaunch = [NSEntityDescription insertNewObjectForEntityForName:@"AppLaunch" inManagedObjectContext:[self managedObjectContext]];
+    [newAppLaunch setValue:[NSDate date] forKey:@"timestamp"];
+    
+    NSError * error;
+    if(![[self managedObjectContext] save:&error]) {
+        NSLog(@"failed to update app launch time: %@", [error localizedDescription]);
     }
 }
 

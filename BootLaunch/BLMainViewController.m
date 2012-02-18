@@ -12,6 +12,7 @@
 
 @synthesize managedObjectContext = _managedObjectContext;
 @synthesize flipsidePopoverController = _flipsidePopoverController;
+@synthesize lastStartedLabel = _lastStartedLabel;
 
 - (void)didReceiveMemoryWarning
 {
@@ -25,6 +26,31 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
+    
+    NSFetchRequest * request = [[NSFetchRequest alloc] initWithEntityName:@"AppLaunch"];
+    request.sortDescriptors = [NSArray arrayWithObject:[[NSSortDescriptor alloc] initWithKey:@"timestamp" ascending:NO]];
+    request.fetchLimit = 1;
+    
+    NSError * error;
+    NSArray * results = [[self managedObjectContext] executeFetchRequest:request error:&error];
+    if(results == nil) {
+        NSLog(@"failed to find app launch instances: %@", [error localizedDescription]);
+        return;
+    }
+    
+    if([results count] == 0) {
+        NSLog(@"no prior app launches (huh?)");
+        return;
+    }
+    
+    id appLaunch = [results objectAtIndex:0];
+    NSDate * lastLaunch = [appLaunch valueForKey:@"timestamp"];
+    
+    NSDateFormatter * formatter = [[NSDateFormatter alloc] init];
+    formatter.dateStyle = NSDateFormatterMediumStyle;
+    formatter.timeStyle = NSDateFormatterMediumStyle;
+    formatter.locale = [NSLocale currentLocale];
+    self.lastStartedLabel.text = [formatter stringFromDate:lastLaunch];
 }
 
 - (void)viewDidUnload

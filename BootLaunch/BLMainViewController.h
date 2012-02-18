@@ -16,6 +16,8 @@
 
 @property (strong, nonatomic) UIPopoverController *flipsidePopoverController;
 
+@property (strong, nonatomic) IBOutlet UILabel * lastStartedLabel;
+
 - (IBAction)showInfo:(id)sender;
 
 @end
