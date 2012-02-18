@@ -27,30 +27,7 @@
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     
-    NSFetchRequest * request = [[NSFetchRequest alloc] initWithEntityName:@"AppLaunch"];
-    request.sortDescriptors = [NSArray arrayWithObject:[[NSSortDescriptor alloc] initWithKey:@"timestamp" ascending:NO]];
-    request.fetchLimit = 1;
-    
-    NSError * error;
-    NSArray * results = [[self managedObjectContext] executeFetchRequest:request error:&error];
-    if(results == nil) {
-        NSLog(@"failed to find app launch instances: %@", [error localizedDescription]);
-        return;
-    }
-    
-    if([results count] == 0) {
-        NSLog(@"no prior app launches (huh?)");
-        return;
-    }
-    
-    id appLaunch = [results objectAtIndex:0];
-    NSDate * lastLaunch = [appLaunch valueForKey:@"timestamp"];
-    
-    NSDateFormatter * formatter = [[NSDateFormatter alloc] init];
-    formatter.dateStyle = NSDateFormatterMediumStyle;
-    formatter.timeStyle = NSDateFormatterMediumStyle;
-    formatter.locale = [NSLocale currentLocale];
-    self.lastStartedLabel.text = [formatter stringFromDate:lastLaunch];
+    [self updateLastLaunchTimeLabel];
 }
 
 - (void)viewDidUnload
@@ -90,6 +67,36 @@
     }
 }
 
+#pragma mark - Custom methods
+
+- (void)updateLastLaunchTimeLabel {
+    NSFetchRequest * request = [[NSFetchRequest alloc] initWithEntityName:@"AppLaunch"];
+    request.sortDescriptors = [NSArray arrayWithObject:[[NSSortDescriptor alloc] initWithKey:@"timestamp" ascending:NO]];
+    request.fetchLimit = 1;
+    
+    NSError * error;
+    NSArray * results = [[self managedObjectContext] executeFetchRequest:request error:&error];
+    if(results == nil) {
+        NSLog(@"failed to find app launch instances: %@", [error localizedDescription]);
+        return;
+    }
+    
+    if([results count] == 0) {
+        NSLog(@"no prior app launches (huh?)");
+        self.lastStartedLabel.text = @"--";
+        return;
+    }
+    
+    id appLaunch = [results objectAtIndex:0];
+    NSDate * lastLaunch = [appLaunch valueForKey:@"timestamp"];
+    
+    NSDateFormatter * formatter = [[NSDateFormatter alloc] init];
+    formatter.dateStyle = NSDateFormatterMediumStyle;
+    formatter.timeStyle = NSDateFormatterMediumStyle;
+    formatter.locale = [NSLocale currentLocale];
+    self.lastStartedLabel.text = [formatter stringFromDate:lastLaunch];
+}
+
 #pragma mark - Flipside View Controller
 
 - (void)flipsideViewControllerDidFinish:(BLFlipsideViewController *)controller
@@ -101,17 +108,23 @@
     }
 }
 
+- (void)flipsideViewControllerDidUpdateLaunchData:(BLFlipsideViewController *)controller {
+    [self updateLastLaunchTimeLabel];
+}
+
 - (IBAction)showInfo:(id)sender
 {
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
         BLFlipsideViewController *controller = [[BLFlipsideViewController alloc] initWithNibName:@"BLFlipsideViewController" bundle:nil];
         controller.delegate = self;
+        controller.managedObjectContext = self.managedObjectContext;
         controller.modalTransitionStyle = UIModalTransitionStyleFlipHorizontal;
         [self presentModalViewController:controller animated:YES];
     } else {
         if (!self.flipsidePopoverController) {
             BLFlipsideViewController *controller = [[BLFlipsideViewController alloc] initWithNibName:@"BLFlipsideViewController" bundle:nil];
             controller.delegate = self;
+            controller.managedObjectContext = self.managedObjectContext;
             
             self.flipsidePopoverController = [[UIPopoverController alloc] initWithContentViewController:controller];
         }

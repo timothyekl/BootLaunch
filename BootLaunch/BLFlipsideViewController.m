@@ -8,9 +8,13 @@
 
 #import "BLFlipsideViewController.h"
 
+#import "BLAppDelegate.h"
+
 @implementation BLFlipsideViewController
 
+@synthesize managedObjectContext = _managedObjectContext;
 @synthesize delegate = _delegate;
+@synthesize launchCountLabel = _launchCountLabel;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -45,6 +49,7 @@
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
+    [self updateLaunchCountLabel];
 }
 
 - (void)viewDidAppear:(BOOL)animated
@@ -74,9 +79,54 @@
 
 #pragma mark - Actions
 
+- (IBAction)resetLaunches:(id)sender {
+    NSFetchRequest * request = [[NSFetchRequest alloc] initWithEntityName:@"AppLaunch"];
+    
+    NSError * error;
+    NSArray * results = [[self managedObjectContext] executeFetchRequest:request error:&error];
+    if(results == nil) {
+        NSLog(@"failure fetching app launches to clear: %@", [error localizedDescription]);
+        return;
+    }
+    
+    for(id object in results) {
+        [[self managedObjectContext] deleteObject:object];
+    }
+    
+    if(![[self managedObjectContext] save:&error]) {
+        NSLog(@"failure saving context after clearing objects: %@", [error localizedDescription]);
+        return;
+    }
+    
+    [self updateLaunchCountLabel];
+    [self.delegate flipsideViewControllerDidUpdateLaunchData:self];
+}
+
+- (IBAction)fakeLaunch:(id)sender {
+    // Kind of a hack. Better way?
+    [(BLAppDelegate *)[[UIApplication sharedApplication] delegate] updateAppLaunchTime];
+    [self updateLaunchCountLabel];
+    [self.delegate flipsideViewControllerDidUpdateLaunchData:self];
+}
+
 - (IBAction)done:(id)sender
 {
     [self.delegate flipsideViewControllerDidFinish:self];
+}
+
+#pragma mark - Custom methods
+
+- (void)updateLaunchCountLabel {
+    NSFetchRequest * request = [[NSFetchRequest alloc] initWithEntityName:@"AppLaunch"];
+    
+    NSError * error;
+    NSArray * results = [[self managedObjectContext] executeFetchRequest:request error:&error];
+    if(results == nil) {
+        NSLog(@"failure fetching app launches to update label: %@", [error localizedDescription]);
+        return;
+    }
+    
+    self.launchCountLabel.text = [NSString stringWithFormat:@"App has launched %d times", [results count]];
 }
 
 @end

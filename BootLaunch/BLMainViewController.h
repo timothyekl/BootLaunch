@@ -20,4 +20,6 @@
 
 - (IBAction)showInfo:(id)sender;
 
+- (void)updateLastLaunchTimeLabel;
+
 @end
